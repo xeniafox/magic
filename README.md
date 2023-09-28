@@ -1,0 +1,2 @@
+# magic
+Silly programming language
