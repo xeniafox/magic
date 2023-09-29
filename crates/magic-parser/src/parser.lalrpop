@@ -1,0 +1,74 @@
+use std::str::FromStr;
+use crate::utils::append;
+use magic_syntax::ast::*;
+
+grammar;
+
+Expr: Box<Expr> = {
+  Expr ExprOp Factor => Box::new(Expr::Op(<>)),
+  Factor
+};
+
+ExprOp: Opcode = {
+  "+" => Opcode::Add,
+  "-" => Opcode::Sub
+};
+
+Factor: Box<Expr> = {
+  Factor FactorOp Term => Box::new(Expr::Op(<>)),
+  Term
+};
+
+FactorOp: Opcode = {
+  "*" => Opcode::Mul,
+  "/" => Opcode::Div
+};
+
+Term: Box<Expr> = {
+  Num => Box::new(Expr::Number(<>)),
+  Identifier => Box::new(Expr::Identifier(<>)),
+  "(" <Expr> ")"
+};
+
+pub Statement: Statement = {
+  "let" <Identifier> "=" <Expr> ";" => Statement::new_definition(<>),
+  <Identifier> "=" <Expr> ";" => Statement::new_assignment(<>)
+};
+
+Statements: Vec<Statement> = {
+  Statement => vec![<>],
+  Statements Statement => append(<>)
+};
+
+TypeKind: TypeKind = {
+  "Int" => TypeKind::Int
+};
+
+TypeAnnotation: TypeKind = ":" <TypeKind>;
+ArrowTypeAnnotation: TypeKind = "->" <TypeKind>;
+Param: (String, TypeKind) = {
+  "(" <Identifier> <TypeAnnotation> ")" => (<>),
+  "(" ")" => ("".to_string(), TypeKind::unit())
+};
+
+ImportDecl: String = {
+  "import" <Identifier> => <>
+};
+
+FnDecl: FnDecl = {
+  "fn" <Identifier> <Param*> <ArrowTypeAnnotation?> "{" <Statements> "}" => FnDecl::new(<>)
+};
+
+TopLevelKind: TopLevelKind = {
+  FnDecl => TopLevelKind::FnDecl(<>),
+  ImportDecl => TopLevelKind::ImportDecl(<>)
+};
+
+pub Program: Vec<TopLevelKind> = TopLevelKind*;
+
+Identifier: String = {
+  r"[a-zA-Z][a-zA-Z_0-9]*" => <>.to_owned()
+};
+
+Num: i32 = r"[0-9]+" => i32::from_str(<>).unwrap();
+

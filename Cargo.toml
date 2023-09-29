@@ -1,0 +1,11 @@
+[workspace]
+
+members = [
+  "crates/magic-cli",
+  "crates/magic-parser",
+  "crates/magic-syntax",
+  "crates/magic-report",
+  "crates/magic-location",
+]
+
+resolver = "1"
